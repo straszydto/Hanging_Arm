@@ -4,13 +4,17 @@
 //define controller
 ControllerPtr myController = nullptr;
 
-Servo eyeServo;
+Servo panServo, eyeServo;
 
-const int eyePin=18;
+const int panPin=18, eyePin=19;
 
-int eyeAngle = 90;
+int panAngle = 90, eyeAngle = 90;
 
 const int deadzone=200;
+
+int outputInterval = 2000, moveInterval = 20;
+
+unsigned long lastOutput = 0, lastMove=0;
 
 void onConnectedController(ControllerPtr ctl) {
   Serial.println("Controller Connectected!");
@@ -22,11 +26,12 @@ void onDisconnectedController(ControllerPtr ctl) {
   myController = nullptr;
 }
 
-unsigned long lastOutput = 0, lastMove=0;
-
 void setup() {
   Serial.begin(115200);
   delay(1000);
+
+  panServo.attach(panPin);
+  panServo.write(panAngle);
 
   eyeServo.attach(eyePin);
   eyeServo.write(eyeAngle);
@@ -46,26 +51,36 @@ void loop() {
 
   unsigned long now = millis();
 
+  int lsX = myController->axisX();
+  int lsY = myController->axisY();
+  int rsX = myController->axisRX();
+  int rsY = myController->axisRY();
   int rt = myController->throttle();
   int lt = myController->brake();
 
-  if (now-lastOutput >= 2500) {
+  if (now-lastOutput >= outputInterval) {
     lastOutput=now;
-    Serial.printf("Battery: %f, Let Stick X: %4d, Y: %4d\nRight Stick X: %4d, Y: %4d\nRT: %4d, LT: %4d\n",
-    myController->battery(),
-    myController->axisX(),
-    myController->axisY(),
-    myController->axisRX(),
-    myController->axisRY(),
-    myController->throttle(),
-    myController->brake()
+    Serial.printf("Left Stick X: %4d, Y: %4d\nRight Stick X: %4d, Y: %4d\nRT: %4d, LT: %4d\n",
+    lsX, lsY,
+    rsX, rsY,
+    rt, lt
     );
 
     Serial.printf("Eye Angle: %d", eyeAngle);
   }
 
-  if (now-lastMove >=200) {
-    now=lastMove;
+  //Movement Section ever X miliseconds
+  if (now-lastMove >= moveInterval) {
+    lastmove=now;
+
+    //Pan Movement
+    if (abs(lsX) >= deadzone) {
+      panAngle += map(lsX, -512, 512, 0, 180)
+      panAngle = constrain(panAngle, 0, 180)
+      panServo.write(panAngle);
+    }
+
+    //Eye movement using RT/LT
     if (rt > deadzone && eyeAngle<180) {
       eyeAngle+=2;
       eyeServo.write(eyeAngle);
@@ -74,6 +89,6 @@ void loop() {
       eyeServo.write(eyeAngle);
     }
   }
-  //Eye Movement
+
   delay(10);
 }
