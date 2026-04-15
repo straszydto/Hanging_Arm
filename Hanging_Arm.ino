@@ -4,9 +4,9 @@
 //define controller
 ControllerPtr myController = nullptr;
 
-Servo panServo, eyeServo;
+Servo panServo, tiltServo, eyeServo;
 
-const int panPin=18, eyePin=19;
+const int panPin=13, tiltPin=12, eyePin=20;
 
 int panAngle = 90, eyeAngle = 90;
 
@@ -32,6 +32,9 @@ void setup() {
 
   panServo.attach(panPin);
   panServo.write(panAngle);
+
+  tiltServo.attach(tiltPin);
+  tiltServo.write(90);
 
   eyeServo.attach(eyePin);
   eyeServo.write(eyeAngle);
@@ -66,18 +69,28 @@ void loop() {
     rt, lt
     );
 
-    Serial.printf("Eye Angle: %d", eyeAngle);
+    Serial.printf("Pan Angle: %d\n", panAngle);
+    Serial.printf("Eye Angle: %d\n", eyeAngle);
+    
   }
 
   //Movement Section ever X miliseconds
   if (now-lastMove >= moveInterval) {
-    lastmove=now;
+    lastMove=now;
 
     //Pan Movement
-    if (abs(lsX) >= deadzone) {
-      panAngle += map(lsX, -512, 512, 0, 180)
-      panAngle = constrain(panAngle, 0, 180)
+    if (lsX >= deadzone || lsX <= -deadzone) {
+      panAngle += map(lsX, -512, 512, -5, 5);
+      panAngle = constrain(panAngle, 0, 180);
       panServo.write(panAngle);
+    }
+
+    //tilt movement
+    if (abs(lsY) > deadzone) {
+      int move = map(lsY, -512, 512, 0, 180);
+      tiltServo.write(move);
+    } else {
+      tiltServo.write(90);
     }
 
     //Eye movement using RT/LT
