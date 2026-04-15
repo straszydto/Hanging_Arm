@@ -4,9 +4,9 @@
 //define controller
 ControllerPtr myController = nullptr;
 
-Servo panServo, tiltServo, eyeServo;
+Servo panServo, tiltServo, headRServo, headLServo, eyeServo;
 
-const int panPin=13, tiltPin=12, eyePin=20;
+const int panPin=13, tiltPin=12, headRPin=14, headLPin=27, eyePin=20;
 
 int panAngle = 90, eyeAngle = 90;
 
@@ -35,6 +35,11 @@ void setup() {
 
   tiltServo.attach(tiltPin);
   tiltServo.write(90);
+
+  headRServo.attach(headRPin);
+  headLServo.attach(headLPin);
+  headRServo.write(90);
+  headLServo.write(90);
 
   eyeServo.attach(eyePin);
   eyeServo.write(eyeAngle);
@@ -91,6 +96,15 @@ void loop() {
       tiltServo.write(move);
     } else {
       tiltServo.write(90);
+    }
+
+    if (abs(rsY) > deadzone) {
+      int move = map(rsY, -512, 512, 0, 180);
+      headRServo.write(move);
+      headLServo.write(move);
+    } else {
+      headRServo.write(90);
+      headLServo.write(90);
     }
 
     //Eye movement using RT/LT
